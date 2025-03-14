@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 const GOOGLE_SHEET_WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbxitm6rWGKmJ69JIivq_sIHiTtr08q8wJWUK_E0Trk7qT78tUoCItolmTPAGGBqV8wM/exec";
+  "https://script.google.com/macros/s/AKfycbwyK6CkuQbxkNlM4JcHXK_VzlNzwhYuZ3nYHkcb4-VGokbklDnCgAw5sHHRld1DGuhk/exec";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -25,71 +25,77 @@ const transporter = nodemailer.createTransport({
 
 transporter.verify((error, success) => {
   if (error) {
-    console.error("Error with email transporter:", error);
+    console.error("SMTP Connection Error:", error);
   } else {
-    console.log("Email transporter is ready");
+    console.log("SMTP Connection Verified. Ready to send emails!");
   }
 });
 
-app.post("/api/submitform", async (req, res) => {
-  const { name, mobileNumber, email, message, timestamp } = req.body;
+app.post("/api/contact-form-submission", async (req, res) => {
+  const { name, phone, email, message, timestamp } = req.body;
+  console.log(req.body);
 
-  if (!name || !mobileNumber || !message || !timestamp) {
+  if (!name || !phone || !timestamp || !email) {
     return res
       .status(400)
-      .json({ error: "All fields except email are required" });
+      .json({ error: "All fields except message are required" });
   }
 
   const emailContent = `
-    <h3>New Form Submission Kerala</h3>
+    <h3>Enquiry Submission</h3>
     <p><strong>Name:</strong> ${name}</p>
-    <p><strong>Mobile:</strong> ${mobileNumber}</p>
-    ${email ? `<p><strong>Email:</strong> ${email}</p>` : ""}
-        <p><strong>Message:</strong> ${message}</p>
+    <p><strong>Mobile:</strong> ${phone}</p>
+    <p><strong>Email:</strong> ${email}</p>
+    ${message ? `<p><strong>Message:</strong> ${message}</p>` : ""}  
     <p><strong>Date & Time:</strong> ${timestamp}</p>
   `;
 
-  // Mail options
   const mailOptions = {
-    from: "info@ipcsglobal.com",
-    to: "ipcsglobalindia@gmail.com,dmmanager.ipcs@gmail.com",
-    subject: "Lead Form Submission",
+    from: process.env.EMAIL_USER,
+    to: "akshay@ipcsglobal.com",
+    subject: "Enquiry Submission",
     html: emailContent,
   };
 
   try {
     // Send email
     const emailResult = await transporter.sendMail(mailOptions);
-    console.log("Email sent:", emailResult.response);
+    console.log("Email sent successfully:", emailResult.response);
 
-    // Send data to Google Sheets via Apps Script Web App
+    // Send data to Google Sheets
     const sheetResponse = await axios.post(GOOGLE_SHEET_WEB_APP_URL, {
       name,
-      mobileNumber,
+      phone,
       email,
-      message,
+      message, 
       timestamp,
     });
 
+    console.log("Google Sheets Response:", sheetResponse.data);
+
     if (sheetResponse.data.status !== "success") {
-      console.error("Google Sheets Error:", sheetResponse.data);
+      console.error(" Google Sheets Error:", sheetResponse.data);
       throw new Error("Failed to add data to Google Sheet");
     }
-    console.log("Data added to Google Sheet");
+
+    console.log("Data successfully added to Google Sheet");
 
     res.status(200).json({
       message: "Form submitted, email sent, data added to Google Sheet",
     });
   } catch (error) {
-    console.error("Error:", error.message || error);
+    console.error(
+      "Error:",
+      error.response ? error.response.data : error.message
+    );
     res.status(500).json({ error: "Failed to process the request" });
   }
 });
 
 app.get("/", (req, res) => {
-  res.send("Server is running");
+  res.send("Server is running for IPCS Technologies");
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(` Server is running on http://localhost:${PORT}`);
 });
