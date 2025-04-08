@@ -49,7 +49,7 @@ app.post("/api/contact-form-submission", async (req, res) => {
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: "akshay@ipcsglobal.com",
+    to: "akshay@ipcsglobal.com,dmmanager.ipcs@gmail.com",
     subject: "Enquiry Submission",
     html: emailContent,
   };
