@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+
 const axios = require("axios");
 const nodemailer = require("nodemailer");
+
 require("dotenv").config();
 
 const PORT = process.env.PORT || 5000;
@@ -10,8 +12,9 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
+
 const GOOGLE_SHEET_WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbwyK6CkuQbxkNlM4JcHXK_VzlNzwhYuZ3nYHkcb4-VGokbklDnCgAw5sHHRld1DGuhk/exec";
+  "https://script.google.com/macros/s/AKfycbxmgsGGr1fkDajD9WyLt__Im-Cx1OVCSkTFVi2yZu6_Wki62ZZMiJ7yirPrEgN1gkPs/exec";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -23,19 +26,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("SMTP Connection Error:", error);
-  } else {
-    console.log("SMTP Connection Verified. Ready to send emails!");
-  }
-});
 
 app.post("/api/contact-form-submission", async (req, res) => {
-  const { name, phone, email, message, timestamp } = req.body;
+  const { name, phone, email, message, timestamp,services } = req.body;
   console.log(req.body);
 
-  if (!name || !phone || !timestamp || !email) {
+  if (!name || !phone || !timestamp || !email || !services) {
     return res
       .status(400)
       .json({ error: "All fields except message are required" });
@@ -46,6 +42,7 @@ app.post("/api/contact-form-submission", async (req, res) => {
     <p><strong>Name:</strong> ${name}</p>
     <p><strong>Mobile:</strong> ${phone}</p>
     <p><strong>Email:</strong> ${email}</p>
+    <p><strong>Service:</strong> ${services}</p>
     ${message ? `<p><strong>Message:</strong> ${message}</p>` : ""}  
     <p><strong>Date & Time:</strong> ${timestamp}</p>
   `;
@@ -67,7 +64,8 @@ app.post("/api/contact-form-submission", async (req, res) => {
       name,
       phone,
       email,
-      message, 
+      message,
+      services, 
       timestamp,
     });
 
@@ -95,6 +93,7 @@ app.post("/api/contact-form-submission", async (req, res) => {
 app.get("/", (req, res) => {
   res.send("Server is running for IPCS Technologies");
 });
+
 
 app.listen(PORT, () => {
   console.log(` Server is running on http://localhost:${PORT}`);
